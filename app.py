@@ -4,46 +4,36 @@ import pandas as pd
 
 @st.cache_data
 def cargar_datos_sql():
-    # Conectar a la base de datos SQLite (asegúrate que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
+    # Conectar a la base de datos SQLite (asegúrate de que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
-    # Reemplaza "iniciativas" por el nombre real de la tabla si es necesario.
+    # Cambia "iniciativas" por el nombre real de la tabla, si es necesario.
     df = pd.read_sql_query("SELECT * FROM iniciativas", conn)
     conn.close()
     return df
 
-# Cargar los datos
+# Cargar los datos desde la base de datos
 df = cargar_datos_sql()
 
 st.title("Visualizador de Proyectos FNDR GORE LOS LAGOS")
-st.write("Utiliza el buscador para filtrar proyectos por nombre o selecciona uno directamente.")
+st.write("Seleccione un proyecto para ver la información asociada.")
 
-# Campo para buscar por NOMBRE DE LA INICIATIVA
-busqueda = st.text_input("Buscar por NOMBRE DE LA INICIATIVA:")
+# Construir las opciones para el selectbox, agregando una opción por defecto.
+opciones = {"Seleccione un proyecto": None}
+for _, row in df.iterrows():
+    opcion = f"{str(row['CODIGO'])[:10]} - {row['NOMBRE DE LA INICIATIVA']}"
+    opciones[opcion] = row['CODIGO']
 
-# Filtrar las opciones en función del término de búsqueda.
-if busqueda:
-    df_filtrado = df[df["NOMBRE DE LA INICIATIVA"].str.contains(busqueda, case=False, na=False)]
-else:
-    df_filtrado = df
+# Selectbox único para la selección de proyecto, con una opción por defecto.
+seleccion = st.selectbox("Seleccione un proyecto:", list(opciones.keys()), key="proyecto_select")
 
-# Crear las opciones para el selectbox:
-# Cada opción muestra hasta 10 dígitos del código seguido del nombre de la iniciativa.
-opciones = {
-    f"{str(row['CODIGO'])[:10]} - {row['NOMBRE DE LA INICIATIVA']}": row['CODIGO']
-    for _, row in df_filtrado.iterrows()
-}
+# Botón para borrar la selección (restablecer a la opción por defecto).
+if st.button("Borrar selección"):
+    st.session_state.proyecto_select = "Seleccione un proyecto"
 
-# Ordenar las opciones para una visualización consistente.
-opciones_ordenadas = dict(sorted(opciones.items()))
-
-# Selectbox único que muestra las opciones filtradas.
-seleccion = st.selectbox("Seleccione un proyecto:", list(opciones_ordenadas.keys()))
-
-# Se obtiene el código asociado a la opción seleccionada.
-codigo_final = opciones_ordenadas[seleccion]
-
-if codigo_final:
-    # Filtrar el DataFrame para el proyecto seleccionado
+# Si se ha seleccionado un proyecto (es decir, no se mantiene la opción por defecto)
+if st.session_state.proyecto_select != "Seleccione un proyecto":
+    codigo_final = opciones[st.session_state.proyecto_select]
+    # Filtrar el DataFrame para obtener el proyecto seleccionado
     df_proyecto = df[df['CODIGO'] == codigo_final]
     
     st.subheader("Nombre de la Iniciativa:")
@@ -54,6 +44,5 @@ if codigo_final:
     grupos = df_proyecto.groupby('ASIGNACION PRESUPUESTARIA CONTRATO')
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
-        # Mostrar las columnas RUT y NOMBRE / RAZON SOCIAL, eliminando duplicados
         contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL']].drop_duplicates()
         st.dataframe(contratos_info)
