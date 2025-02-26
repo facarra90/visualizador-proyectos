@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 
 @st.cache_data
 def cargar_datos_sql():
-    # Conectar a la base de datos SQLite (asegúrate de que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
+    # Conectar a la base de datos SQLite (asegúrate que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
     # Cambia "iniciativas" por el nombre real de la tabla, si es necesario.
     df = pd.read_sql_query("SELECT * FROM iniciativas", conn)
@@ -59,12 +59,14 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
         # Seleccionar las columnas de interés y eliminar duplicados
-        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION']].drop_duplicates()
-        # Agrupar por RUT y combinar NRO. RESOL. y FECHA RESOLUCION en una sola columna formateada
+        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION', 'VALOR ESTADO DE PAGO']].drop_duplicates()
+        # Agrupar por RUT y combinar NRO. RESOL. y FECHA RESOLUCION en una sola columna formateada,
+        # además de sumar VALOR ESTADO DE PAGO para cada RUT.
         contratos_agrupados = contratos_info.groupby('RUT').apply(
             lambda x: pd.Series({
                 'NOMBRE / RAZON SOCIAL': x['NOMBRE / RAZON SOCIAL'].iloc[0],
-                'Resoluciones': join_resolutions([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])])
+                'Resoluciones': join_resolutions([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])]),
+                'Total VALOR ESTADO DE PAGO': x['VALOR ESTADO DE PAGO'].sum()
             })
         ).reset_index()
         # Convertir el DataFrame a HTML sin mostrar el índice y renderizarlo
