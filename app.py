@@ -39,7 +39,7 @@ if codigo_seleccionado:
     
     # Iterar sobre cada grupo y mostrar la información de contratos
     for asignacion, grupo in grupos:
-        st.markdown(f"### Asignación Presupuestaria: {asignacion}")
+        st.markdown(f"### {asignacion}")
         # Seleccionamos y eliminamos duplicados en las columnas RUT y NOMBRE / RAZON SOCIAL
         contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL']].drop_duplicates()
         st.dataframe(contratos_info)
