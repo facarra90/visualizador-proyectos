@@ -4,7 +4,7 @@ import pandas as pd
 
 @st.cache_data
 def cargar_datos_sql():
-    # Conectar a la base de datos SQLite (asegúrate de que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
+    # Conectar a la base de datos SQLite (asegúrate que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
     # Cambia "iniciativas" por el nombre real de la tabla, si es necesario.
     df = pd.read_sql_query("SELECT * FROM iniciativas", conn)
@@ -44,7 +44,8 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
     grupos = df_proyecto.groupby('ASIGNACION PRESUPUESTARIA CONTRATO')
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
-        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL']].drop_duplicates()
+        # Se incluyen las columnas RUT, NOMBRE / RAZON SOCIAL, NRO. RESOL. y FECHA RESOLUCION
+        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION']].drop_duplicates()
         # Convertir el DataFrame a HTML sin índice y mostrarlo
         html_table = contratos_info.to_html(index=False)
         st.markdown(html_table, unsafe_allow_html=True)
