@@ -44,14 +44,11 @@ for _, row in df.iterrows():
 # Selectbox único para la selección de proyecto, con una opción por defecto.
 seleccion = st.selectbox("Seleccione un proyecto:", list(opciones.keys()), key="proyecto_select")
 
-# Si se ha seleccionado un proyecto (es decir, se elige una opción distinta a la por defecto)
+# Si se ha seleccionado un proyecto (se elige una opción distinta a la por defecto)
 if st.session_state.proyecto_select != "Seleccione un proyecto":
     codigo_final = opciones[st.session_state.proyecto_select]
     # Filtrar el DataFrame para obtener el proyecto seleccionado
     df_proyecto = df[df['CODIGO'] == codigo_final]
-    
-    st.subheader("Nombre de la Iniciativa:")
-    st.write(df_proyecto.iloc[0]['NOMBRE DE LA INICIATIVA'])
     
     st.markdown("## Contratos asociados al proyecto")
     # Agrupar los contratos por ASIGNACION PRESUPUESTARIA CONTRATO
@@ -59,14 +56,13 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
         # Seleccionar las columnas de interés y eliminar duplicados
-        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION', 'VALOR ESTADO DE PAGO']].drop_duplicates()
-        # Agrupar por RUT y combinar NRO. RESOL. y FECHA RESOLUCION en una sola columna formateada,
-        # además de sumar VALOR ESTADO DE PAGO para cada RUT.
+        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION', 'VALOR ESTADO DE PAGO', 'ESTADO DEL EEPP']].drop_duplicates()
+        # Agrupar por RUT y combinar resoluciones, y sumar VALOR ESTADO DE PAGO solo cuando ESTADO DEL EEPP sea "DEVENGADO"
         contratos_agrupados = contratos_info.groupby('RUT').apply(
             lambda x: pd.Series({
                 'NOMBRE / RAZON SOCIAL': x['NOMBRE / RAZON SOCIAL'].iloc[0],
                 'Resoluciones': join_resolutions([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])]),
-                'TOTAL PAGADO': x['VALOR ESTADO DE PAGO'].sum()
+                'TOTAL PAGADO': x.loc[x['ESTADO DEL EEPP'] == 'DEVENGADO', 'VALOR ESTADO DE PAGO'].sum()
             })
         ).reset_index()
         # Formatear TOTAL PAGADO como moneda en pesos
