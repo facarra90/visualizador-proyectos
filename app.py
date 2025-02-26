@@ -45,4 +45,5 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
         contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL']].drop_duplicates()
-        st.dataframe(contratos_info)
+        # Aplicamos hide_index() para que no se muestre la columna de índices.
+        st.dataframe(contratos_info.style.hide_index())
