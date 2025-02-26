@@ -69,9 +69,11 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
                 'TOTAL PAGADO': x['VALOR ESTADO DE PAGO'].sum()
             })
         ).reset_index()
-        # Formatear TOTAL PAGADO como moneda en pesos y alinearlo a la derecha
+        # Formatear TOTAL PAGADO como moneda en pesos
         contratos_agrupados['TOTAL PAGADO'] = contratos_agrupados['TOTAL PAGADO'].apply(lambda v: "${:,.0f}".format(v))
         
         # Usar Styler para alinear a la derecha la columna TOTAL PAGADO y ocultar el índice
-        styled_table = contratos_agrupados.style.hide_index().set_properties(subset=['TOTAL PAGADO'], **{'text-align': 'right'})
+        styled_table = contratos_agrupados.style.hide(axis="index").set_properties(
+            subset=['TOTAL PAGADO'], **{'text-align': 'right'}
+        )
         st.markdown(styled_table.to_html(), unsafe_allow_html=True)
