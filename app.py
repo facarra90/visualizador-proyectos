@@ -45,5 +45,6 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
         contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL']].drop_duplicates()
-        # Aplicamos hide_index() para que no se muestre la columna de índices.
-        st.dataframe(contratos_info.style.hide_index())
+        # Convertir el DataFrame a HTML sin índice y mostrarlo
+        html_table = contratos_info.to_html(index=False)
+        st.markdown(html_table, unsafe_allow_html=True)
