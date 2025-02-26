@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 
 @st.cache_data
 def cargar_datos_sql():
-    # Conectar a la base de datos SQLite (asegúrate que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
+    # Conectar a la base de datos SQLite (asegúrate de que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
     # Cambia "iniciativas" por el nombre real de la tabla, si es necesario.
     df = pd.read_sql_query("SELECT * FROM iniciativas", conn)
@@ -43,10 +43,6 @@ for _, row in df.iterrows():
 
 # Selectbox único para la selección de proyecto, con una opción por defecto.
 seleccion = st.selectbox("Seleccione un proyecto:", list(opciones.keys()), key="proyecto_select")
-
-# Botón para borrar la selección (restablecer a la opción por defecto).
-if st.button("Borrar selección"):
-    st.session_state.proyecto_select = "Seleccione un proyecto"
 
 # Si se ha seleccionado un proyecto (es decir, no se mantiene la opción por defecto)
 if st.session_state.proyecto_select != "Seleccione un proyecto":
