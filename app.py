@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 
 @st.cache_data
 def cargar_datos_sql():
-    # Conectar a la base de datos SQLite (asegúrate que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
+    # Conectar a la base de datos SQLite (asegúrate de que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
     # Cambia "iniciativas" por el nombre real de la tabla, si es necesario.
     df = pd.read_sql_query("SELECT * FROM iniciativas", conn)
@@ -44,7 +44,7 @@ for _, row in df.iterrows():
 # Selectbox único para la selección de proyecto, con una opción por defecto.
 seleccion = st.selectbox("Seleccione un proyecto:", list(opciones.keys()), key="proyecto_select")
 
-# Si se ha seleccionado un proyecto (es decir, no se mantiene la opción por defecto)
+# Si se ha seleccionado un proyecto (es decir, se elige una opción distinta a la por defecto)
 if st.session_state.proyecto_select != "Seleccione un proyecto":
     codigo_final = opciones[st.session_state.proyecto_select]
     # Filtrar el DataFrame para obtener el proyecto seleccionado
@@ -66,9 +66,12 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
             lambda x: pd.Series({
                 'NOMBRE / RAZON SOCIAL': x['NOMBRE / RAZON SOCIAL'].iloc[0],
                 'Resoluciones': join_resolutions([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])]),
-                'Total VALOR ESTADO DE PAGO': x['VALOR ESTADO DE PAGO'].sum()
+                'TOTAL PAGADO': x['VALOR ESTADO DE PAGO'].sum()
             })
         ).reset_index()
-        # Convertir el DataFrame a HTML sin mostrar el índice y renderizarlo
-        html_table = contratos_agrupados.to_html(index=False)
-        st.markdown(html_table, unsafe_allow_html=True)
+        # Formatear TOTAL PAGADO como moneda en pesos y alinearlo a la derecha
+        contratos_agrupados['TOTAL PAGADO'] = contratos_agrupados['TOTAL PAGADO'].apply(lambda v: "${:,.0f}".format(v))
+        
+        # Usar Styler para alinear a la derecha la columna TOTAL PAGADO y ocultar el índice
+        styled_table = contratos_agrupados.style.hide_index().set_properties(subset=['TOTAL PAGADO'], **{'text-align': 'right'})
+        st.markdown(styled_table.to_html(), unsafe_allow_html=True)
