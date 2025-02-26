@@ -14,6 +14,21 @@ def cargar_datos_sql():
     conn.close()
     return df
 
+def join_resolutions(res_list):
+    """Une los pares 'NRO. RESOL. de FECHA RESOLUCION' con formato:
+       - 1 elemento: "1110 de 16/09/2016"
+       - 2 elementos: "1110 de 16/09/2016 y 1421 de 29/11/2016"
+       - Más de 2: "1110 de 16/09/2016, 1421 de 29/11/2016 y 1530 de 05/01/2017"
+    """
+    if not res_list:
+        return ""
+    elif len(res_list) == 1:
+        return res_list[0]
+    elif len(res_list) == 2:
+        return " y ".join(res_list)
+    else:
+        return ", ".join(res_list[:-1]) + " y " + res_list[-1]
+
 # Cargar los datos desde la base de datos
 df = cargar_datos_sql()
 
@@ -49,11 +64,11 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
         st.markdown(f"### {asignacion}")
         # Seleccionar las columnas de interés y eliminar duplicados
         contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION']].drop_duplicates()
-        # Agrupar por RUT y combinar NRO. RESOL. con su respectiva FECHA RESOLUCION en una sola columna
+        # Agrupar por RUT y combinar NRO. RESOL. y FECHA RESOLUCION en una sola columna formateada
         contratos_agrupados = contratos_info.groupby('RUT').apply(
             lambda x: pd.Series({
                 'NOMBRE / RAZON SOCIAL': x['NOMBRE / RAZON SOCIAL'].iloc[0],
-                'Resoluciones': " y ".join([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])])
+                'Resoluciones': join_resolutions([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])])
             })
         ).reset_index()
         # Convertir el DataFrame a HTML sin mostrar el índice y renderizarlo
