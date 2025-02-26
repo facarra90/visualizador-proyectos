@@ -49,12 +49,13 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
         st.markdown(f"### {asignacion}")
         # Seleccionar las columnas de interés y eliminar duplicados
         contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION']].drop_duplicates()
-        # Agrupar por RUT para unir en una misma fila los distintos NRO. RESOL. y FECHA RESOLUCION
-        contratos_agrupados = contratos_info.groupby('RUT').agg({
-            'NOMBRE / RAZON SOCIAL': 'first',
-            'NRO. RESOL.': lambda x: ", ".join(x.astype(str).unique()),
-            'FECHA RESOLUCION': lambda x: ", ".join(x.astype(str).unique())
-        }).reset_index()
-        # Convertir el DataFrame a HTML sin índice y mostrarlo
+        # Agrupar por RUT y combinar NRO. RESOL. con su respectiva FECHA RESOLUCION en una sola columna
+        contratos_agrupados = contratos_info.groupby('RUT').apply(
+            lambda x: pd.Series({
+                'NOMBRE / RAZON SOCIAL': x['NOMBRE / RAZON SOCIAL'].iloc[0],
+                'Resoluciones': " y ".join([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])])
+            })
+        ).reset_index()
+        # Convertir el DataFrame a HTML sin mostrar el índice y renderizarlo
         html_table = contratos_agrupados.to_html(index=False)
         st.markdown(html_table, unsafe_allow_html=True)
