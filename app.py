@@ -2,9 +2,12 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
+# Configuración de la página para ocupar todo el ancho disponible
+st.set_page_config(layout="wide")
+
 @st.cache_data
 def cargar_datos_sql():
-    # Conectar a la base de datos SQLite (asegúrate que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
+    # Conectar a la base de datos SQLite (asegúrate de que 'tabla_iniciativas_clean.db' esté en la raíz del proyecto)
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
     # Cambia "iniciativas" por el nombre real de la tabla, si es necesario.
     df = pd.read_sql_query("SELECT * FROM iniciativas", conn)
