@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
+@st.cache_data
 def cargar_datos_sql():
     # Conectar a la base de datos SQLite
     conn = sqlite3.connect('tabla_iniciativas_clean.db')
@@ -10,7 +11,7 @@ def cargar_datos_sql():
     conn.close()
     return df
 
-# Cargar los datos de la base de datos
+# Cargar los datos de la base de datos SQLite
 df = cargar_datos_sql()
 
 st.title("Visualizador de Proyectos")
