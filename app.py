@@ -29,6 +29,23 @@ def join_resolutions(res_list):
     else:
         return ", ".join(res_list[:-1]) + " y " + res_list[-1]
 
+def pagos_por_año(x):
+    """
+    Para el DataFrame x (correspondiente a un RUT), filtra solo los registros con
+    ESTADO DEL EEPP == 'DEVENGADO', extrae el año de FECHA RESOLUCION y suma el VALOR ESTADO DE PAGO por año.
+    Devuelve una cadena formateada, por ejemplo: "2016: $1,200, 2017: $2,500"
+    """
+    df_dev = x[x['ESTADO DEL EEPP'] == 'DEVENGADO']
+    if df_dev.empty:
+        return ""
+    # Convertir FECHA RESOLUCION a datetime (suponiendo formato día/mes/año)
+    fechas = pd.to_datetime(df_dev['FECHA RESOLUCION'], dayfirst=True, errors='coerce')
+    # Agrupar por año y sumar
+    sums_by_year = df_dev.groupby(fechas.dt.year)['VALOR ESTADO DE PAGO'].sum()
+    # Formatear cada suma como moneda en pesos
+    formatted = [f"{year}: ${s:,.0f}" for year, s in sums_by_year.items()]
+    return ", ".join(formatted)
+
 # Cargar los datos desde la base de datos
 df = cargar_datos_sql()
 
@@ -41,10 +58,10 @@ for _, row in df.iterrows():
     opcion = f"{str(row['CODIGO'])[:10]} - {row['NOMBRE DE LA INICIATIVA']}"
     opciones[opcion] = row['CODIGO']
 
-# Selectbox único para la selección de proyecto, con una opción por defecto.
+# Selectbox único para la selección de proyecto, con opción por defecto.
 seleccion = st.selectbox("Seleccione un proyecto:", list(opciones.keys()), key="proyecto_select")
 
-# Si se ha seleccionado un proyecto (es decir, se elige una opción distinta a la por defecto)
+# Si se ha seleccionado un proyecto (opción distinta a la por defecto)
 if st.session_state.proyecto_select != "Seleccione un proyecto":
     codigo_final = opciones[st.session_state.proyecto_select]
     # Filtrar el DataFrame para obtener el proyecto seleccionado
@@ -56,16 +73,20 @@ if st.session_state.proyecto_select != "Seleccione un proyecto":
     for asignacion, grupo in grupos:
         st.markdown(f"### {asignacion}")
         # Seleccionar las columnas de interés y eliminar duplicados
-        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION', 'VALOR ESTADO DE PAGO', 'ESTADO DEL EEPP']].drop_duplicates()
+        contratos_info = grupo[['RUT', 'NOMBRE / RAZON SOCIAL', 'NRO. RESOL.', 'FECHA RESOLUCION',
+                                'VALOR ESTADO DE PAGO', 'ESTADO DEL EEPP']].drop_duplicates()
         # Agrupar por RUT:
-        # Se combinan las resoluciones eliminando duplicados, y se suma VALOR ESTADO DE PAGO solo para "DEVENGADO"
+        # - Combinar resoluciones (eliminando duplicados) en una sola cadena.
+        # - Sumar VALOR ESTADO DE PAGO solo para DEVENGADO.
+        # - Calcular el pago desglosado por año.
         contratos_agrupados = contratos_info.groupby('RUT').apply(
             lambda x: pd.Series({
                 'NOMBRE / RAZON SOCIAL': x['NOMBRE / RAZON SOCIAL'].iloc[0],
                 'Resoluciones': join_resolutions(
                     list(dict.fromkeys([f"{nro} de {fecha}" for nro, fecha in zip(x['NRO. RESOL.'], x['FECHA RESOLUCION'])]))
                 ),
-                'TOTAL PAGADO': x.loc[x['ESTADO DEL EEPP'] == 'DEVENGADO', 'VALOR ESTADO DE PAGO'].sum()
+                'TOTAL PAGADO': x.loc[x['ESTADO DEL EEPP'] == 'DEVENGADO', 'VALOR ESTADO DE PAGO'].sum(),
+                'PAGADO POR AÑO': pagos_por_año(x)
             })
         ).reset_index()
         # Formatear TOTAL PAGADO como moneda en pesos
